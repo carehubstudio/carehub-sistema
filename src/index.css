@@ -7,8 +7,8 @@
   --ok:#1F7A4D; --ok-soft:#DDF1E6; --warn:#9A6212; --warn-soft:#F8EBD2; --bad:#B23A32; --bad-soft:#F7DEDB; --idle:#6A7380; --idle-soft:#E7EAEF; --info:#1F4F8A; --info-soft:#E0E9F6;
   --shadow:0 10px 40px rgba(0,46,93,.16);
   --pil-f:#EFE7FF; --pil-b:#8B5CF6; --tre-f:#DDF7F2; --tre-b:#00A88D; --rea-f:#E1EAF4; --rea-b:#002E5D; --bod-f:#FFEEDB; --bod-b:#EA580C; --ava-f:#FFE6EE; --ava-b:#DB2777; --out-f:#ECEFF3; --out-b:#6A7380;
-  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
-  --f-body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-display:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0A1320; --surface:#101C2D; --sunk:#08101B; --ink:#E6ECF4; --muted:#93A1B5; --line:#22324A;
@@ -205,3 +205,6 @@ a{color:var(--accent)}
 .tabs button[aria-selected="true"]{border-bottom-color:var(--brand2)}
 header.top{border-bottom:1px solid var(--line)}
 .btn.pri:hover{filter:brightness(1.12)}
+
+h1,h2,h3,.kpi b,.datenav strong,.slot time,.cal .ch{font-stretch:88%;font-weight:700}
+h1{letter-spacing:-.015em}
