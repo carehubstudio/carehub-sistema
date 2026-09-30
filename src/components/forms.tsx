@@ -166,7 +166,8 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
   const novoVenc = !pagamento && ct && ct.tipo === 'plano' && ct.meses ? addMonths(ct.vencimento || f.data, ct.meses) : null
   const taxas = config.taxas || {}
   const kTaxa = f.forma === 'Cartão de crédito' && +f.parcelas > 1 ? 'Cartão de crédito parcelado' : f.forma
-  const taxa = Number(taxas[kTaxa] || 0), imp = Number(config.imposto_pct || 0)
+  const fixo = (config.modo_desconto || 'fixo') === 'fixo'
+  const taxa = fixo ? Number(config.desconto_fixo_pct || 0) : Number(taxas[kTaxa] || 0), imp = fixo ? 0 : Number(config.imposto_pct || 0)
   const liq = f.valor ? Number(f.valor) * (1 - (taxa + imp) / 100) : 0
 
   function escolheCt(id: string) { setCtId(id); const c = contratos.get(id); if (c) { setItemId(''); setF(v => ({ ...v, valor: String(valorCobranca(c) ?? ''), profissional_id: c.profissional_id || '' })) } }
@@ -227,7 +228,7 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
       <label className="f">Nota fiscal<input id="pg_nf" value={f.nf} onChange={set('nf')} /></label>
       <label className="f">Pago por (se outra pessoa)<input id="pg_pagante" value={f.pagante} onChange={set('pagante')} /></label>
       <label className="f full">Observação<input id="pg_obs" value={f.obs} onChange={set('obs')} /></label>
-      {perfil.papel === 'gestao' && f.valor && <p className="sub full" style={{ margin: 0 }}>Líquido estimado {brl(liq)} (taxa {taxa}% · imposto {imp}%).{ct?.tipo === 'pacote' || item?.tipo === 'pacote' ? ' Pacote: o repasse é lançado a cada sessão realizada.' : ''}</p>}
+      {perfil.papel === 'gestao' && f.valor && <p className="sub full" style={{ margin: 0 }}>Líquido estimado {brl(liq)} ({fixo ? `desconto fixo ${taxa}%` : `taxa ${taxa}% · imposto ${imp}%`}).{ct?.tipo === 'pacote' || item?.tipo === 'pacote' ? ' Pacote: o repasse é lançado a cada sessão realizada.' : ''}</p>}
       {novoVenc && <label className="check full"><input type="checkbox" checked={renova} onChange={e => setRenova(e.target.checked)} /> Atualizar o vencimento do contrato para {br(novoVenc)}</label>}
       <footer>{pagamento && perfil.papel === 'gestao' ? <Confirmar label="Excluir" onConfirm={excluir} /> : <span />}<div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>{pagamento ? 'Salvar' : 'Registrar'}</button></div></footer>
     </form>

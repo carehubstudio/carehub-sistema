@@ -13,6 +13,7 @@ export function Configuracoes() {
   const [novoProf, setNovoProf] = useState('')
   const [nr, setNr] = useState({ profissional_id: '', modalidade: '', pct_estudio: '', vigencia_inicio: hoje() })
   const [taxas, setTaxas] = useState<Record<string, string>>({}); const [imp, setImp] = useState(''); const [prazo, setPrazo] = useState('')
+  const [modo, setModo] = useState('fixo'); const [fixo, setFixo] = useState('')
   const carregar = () => {
     sb.from('perfis').select('*').order('created_at').then(r => setPerfis((r.data as Perfil[]) || []))
     sb.from('regras_repasse').select('*').order('vigencia_inicio', { ascending: false }).then(r => setRegras((r.data as Regra[]) || []))
@@ -20,7 +21,7 @@ export function Configuracoes() {
   useEffect(carregar, [])
   useEffect(() => {
     setTaxas(Object.fromEntries(Object.entries(config.taxas || {}).map(([k, v]) => [k, String(v)])))
-    setImp(String(config.imposto_pct ?? 0)); setPrazo(String(config.prazo_aviso_falta_horas ?? 12))
+    setImp(String(config.imposto_pct ?? 0)); setPrazo(String(config.prazo_aviso_falta_horas ?? 12)); setModo(config.modo_desconto || 'fixo'); setFixo(String(config.desconto_fixo_pct ?? 0))
   }, [config])
   const mods = [...new Set(produtos.map(p => p.modalidade))].sort()
   const nome = (id: string) => profissionais.find(p => p.id === id)?.nome || '—'
@@ -34,8 +35,8 @@ export function Configuracoes() {
   }
   async function salvarFin() {
     const t = Object.fromEntries(Object.entries(taxas).map(([k, v]) => [k, Number(v) || 0]))
-    const r = await sb.from('configuracoes').upsert([{ chave: 'taxas', valor: t }, { chave: 'imposto_pct', valor: Number(imp) || 0 }, { chave: 'prazo_aviso_falta_horas', valor: Number(prazo) || 0 }])
-    if (ok(r, 'Taxas e imposto salvos. Valem para os próximos pagamentos.')) recarregarConfig()
+    const r = await sb.from('configuracoes').upsert([{ chave: 'taxas', valor: t }, { chave: 'imposto_pct', valor: Number(imp) || 0 }, { chave: 'prazo_aviso_falta_horas', valor: Number(prazo) || 0 }, { chave: 'modo_desconto', valor: modo }, { chave: 'desconto_fixo_pct', valor: Number(fixo) || 0 }])
+    if (ok(r, 'Desconto salvo. Vale para os próximos pagamentos.')) recarregarConfig()
   }
   return <>
     <div className="viewhead"><div><h1>Configurações</h1><p>Usuários, profissionais, regras de repasse, taxas e imposto</p></div></div>
@@ -63,11 +64,15 @@ export function Configuracoes() {
           <button className="btn pri" onClick={addRegra}>Incluir regra</button>
         </div></section>
 
-      <section className="panel"><header><div><h2>Taxas e imposto</h2><p>Descontados do valor pago antes de calcular o repasse. Cada pagamento guarda a taxa da data em que foi lançado.</p></div></header>
-        <div className="pbody" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
-          {Object.keys(taxas).map(k => <label className="f" key={k}>{k} (%)<input type="number" step="0.01" min="0" value={taxas[k]} onChange={e => setTaxas({ ...taxas, [k]: e.target.value })} /></label>)}
-          <label className="f">Imposto sobre receita (%)<input type="number" step="0.01" min="0" value={imp} onChange={e => setImp(e.target.value)} /></label>
-          <label className="f">Aviso mínimo de falta (horas)<input type="number" step="1" min="0" value={prazo} onChange={e => setPrazo(e.target.value)} /></label>
+      <section className="panel"><header><div><h2>Desconto antes do repasse</h2><p>Taxas de cartão e imposto descontados do valor pago antes de calcular o repasse. Cada pagamento guarda o desconto da data em que foi lançado.</p></div></header>
+        <div className="pbody" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="seg"><button aria-pressed={modo === 'fixo'} onClick={() => setModo('fixo')}>Percentual único</button><button aria-pressed={modo === 'detalhado'} onClick={() => setModo('detalhado')}>Por forma de pagamento</button></div>
+          {modo === 'fixo' ? <label className="f" style={{ maxWidth: 260 }}>Desconto fixo sobre todo pagamento (%)<input type="number" step="0.01" min="0" value={fixo} onChange={e => setFixo(e.target.value)} /><span className="sub">Média de taxas + imposto. Revise a cada trimestre.</span></label> :
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+              {Object.keys(taxas).map(k => <label className="f" key={k}>{k} (%)<input type="number" step="0.01" min="0" value={taxas[k]} onChange={e => setTaxas({ ...taxas, [k]: e.target.value })} /></label>)}
+              <label className="f">Imposto sobre receita (%)<input type="number" step="0.01" min="0" value={imp} onChange={e => setImp(e.target.value)} /></label>
+            </div>}
+          <label className="f" style={{ maxWidth: 260 }}>Aviso mínimo de falta (horas)<input type="number" step="1" min="0" value={prazo} onChange={e => setPrazo(e.target.value)} /></label>
         </div>
         <div className="pbody" style={{ borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end' }}><button className="btn pri" onClick={salvarFin}>Salvar</button></div></section>
 
