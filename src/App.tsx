@@ -28,7 +28,7 @@ function Login() {
     setBusy(false)
   }
   return <div className="login"><form className="box" onSubmit={go}>
-    <div className="brand">CareHub <small>Studio</small></div>
+    <div className="logo" aria-label="CareHub Studio"><span className="sym" /><span className="word" /></div>
     <h1>{modo === 'entrar' ? 'Entrar' : modo === 'criar' ? 'Criar conta' : 'Esqueci a senha'}</h1>
     {modo === 'criar' && <label className="f">Seu nome<input required value={f.nome} onChange={e => setF({ ...f, nome: e.target.value })} autoComplete="name" /></label>}
     <label className="f">E-mail<input type="email" required value={f.email} onChange={e => setF({ ...f, email: e.target.value })} autoComplete="email" /></label>
@@ -70,7 +70,7 @@ function Shell() {
   const equipe = perfil.papel === 'gestao' || perfil.papel === 'recepcao'
   return <>
     <header className="top"><div className="topin">
-      <div className="brand">CareHub <small>Studio</small></div>
+      <div className="logo" aria-label="CareHub Studio"><span className="sym" /><span className="word" /></div>
       <nav className="tabs" role="tablist">{tabs.map(t => <button key={t.k} role="tab" aria-selected={tab === t.k} onClick={() => ir(t.k)}>{t.l === 'Clientes' && perfil.papel === 'profissional' ? 'Meus alunos' : t.l}</button>)}</nav>
       <div className="topact">
         {equipe && <button className="btn pri" onClick={() => setPg(true)}>+ Pagamento</button>}
@@ -109,7 +109,7 @@ export default function App() {
   if (!session) return <Login />
   if (!perfil) return <div className="loading">Carregando seu perfil…</div>
   if (perfil.papel === 'pendente' || !perfil.ativo) return <div className="login"><div className="box">
-    <div className="brand">CareHub <small>Studio</small></div>
+    <div className="logo" aria-label="CareHub Studio"><span className="sym" /><span className="word" /></div>
     <h1>{perfil.ativo ? 'Aguardando liberação' : 'Acesso bloqueado'}</h1>
     <p className="muted">{perfil.ativo ? 'Sua conta foi criada. A gestão do estúdio precisa liberar seu acesso e definir seu perfil.' : 'Fale com a gestão do estúdio.'}</p>
     <div className="inline"><button className="btn" onClick={() => location.reload()}>Verificar de novo</button><button className="btn ghost" onClick={() => sb.auth.signOut()}>Sair</button></div>

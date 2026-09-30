@@ -1,27 +1,28 @@
 
 /* CareHub Studio — tokens e componentes */
+/* Marca CareHub: azul Pantone 296 C (#002E5D) e verde Pantone 3265 C (#00D4B2). Neutros puxados para o azul. */
 :root{
-  --bg:#F3F5F2; --surface:#FFFFFF; --sunk:#E9EDE9; --ink:#17211D; --muted:#5B6862; --line:#D9E0DB;
-  --accent:#1D6B58; --accent-soft:#DCEDE6; --on-accent:#FFFFFF;
-  --ok:#2C7A4B; --ok-soft:#DDF0E3; --warn:#9A6212; --warn-soft:#F8EBD2; --bad:#B23A32; --bad-soft:#F7DEDB; --idle:#6A716E; --idle-soft:#E6E9E7; --info:#35549C; --info-soft:#E0E7F6;
-  --shadow:0 10px 40px rgba(20,35,28,.18);
-  --pil-f:#EFE7FF; --pil-b:#8B5CF6; --tre-f:#E3F4E8; --tre-b:#16A34A; --rea-f:#E4EEFF; --rea-b:#2563EB; --bod-f:#FFEEDB; --bod-b:#EA580C; --ava-f:#FFE6EE; --ava-b:#DB2777; --out-f:#ECEFEE; --out-b:#6A716E;
+  --bg:#F4F6F9; --surface:#FFFFFF; --sunk:#E9EDF3; --ink:#0E1B2E; --muted:#5A6577; --line:#DCE2EA;
+  --accent:#002E5D; --accent-soft:#E1EAF4; --on-accent:#FFFFFF; --brand:#002E5D; --brand2:#00D4B2; --brand2-soft:#D6F7F1;
+  --ok:#1F7A4D; --ok-soft:#DDF1E6; --warn:#9A6212; --warn-soft:#F8EBD2; --bad:#B23A32; --bad-soft:#F7DEDB; --idle:#6A7380; --idle-soft:#E7EAEF; --info:#1F4F8A; --info-soft:#E0E9F6;
+  --shadow:0 10px 40px rgba(0,46,93,.16);
+  --pil-f:#EFE7FF; --pil-b:#8B5CF6; --tre-f:#DDF7F2; --tre-b:#00A88D; --rea-f:#E1EAF4; --rea-b:#002E5D; --bod-f:#FFEEDB; --bod-b:#EA580C; --ava-f:#FFE6EE; --ava-b:#DB2777; --out-f:#ECEFF3; --out-b:#6A7380;
   --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --f-body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#111715; --surface:#18201D; --sunk:#0D1311; --ink:#E6ECE8; --muted:#9AA7A1; --line:#2A3531;
-  --accent:#5CC0A2; --accent-soft:#1B3A31; --on-accent:#0B1714;
-  --ok:#6BCB8E; --ok-soft:#173222; --warn:#E3AE5A; --warn-soft:#3A2C14; --bad:#F08A80; --bad-soft:#3D1D1A; --idle:#A0A8A4; --idle-soft:#252D2A; --info:#8FA9EA; --info-soft:#1D2743;
+  --bg:#0A1320; --surface:#101C2D; --sunk:#08101B; --ink:#E6ECF4; --muted:#93A1B5; --line:#22324A;
+  --accent:#00D4B2; --accent-soft:#0F3A3F; --on-accent:#002E5D; --brand:#E6ECF4; --brand2:#00D4B2; --brand2-soft:#0F3A3F;
+  --ok:#6BCB8E; --ok-soft:#173222; --warn:#E3AE5A; --warn-soft:#3A2C14; --bad:#F08A80; --bad-soft:#3D1D1A; --idle:#A0A8B4; --idle-soft:#1E2A3A; --info:#8FB3EA; --info-soft:#1B2A44;
   --shadow:0 10px 40px rgba(0,0,0,.5);
-  --pil-f:#2A2142; --pil-b:#A78BFA; --tre-f:#16301F; --tre-b:#4ADE80; --rea-f:#1A2744; --rea-b:#60A5FA; --bod-f:#3A2415; --bod-b:#FB923C; --ava-f:#3A1A28; --ava-b:#F472B6; --out-f:#252D2A; --out-b:#A0A8A4;
+  --pil-f:#2A2142; --pil-b:#A78BFA; --tre-f:#0F3A3F; --tre-b:#00D4B2; --rea-f:#16284A; --rea-b:#7FA8E0; --bod-f:#3A2415; --bod-b:#FB923C; --ava-f:#3A1A28; --ava-b:#F472B6; --out-f:#1E2A3A; --out-b:#A0A8B4;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#111715; --surface:#18201D; --sunk:#0D1311; --ink:#E6ECE8; --muted:#9AA7A1; --line:#2A3531;
-  --accent:#5CC0A2; --accent-soft:#1B3A31; --on-accent:#0B1714;
-  --ok:#6BCB8E; --ok-soft:#173222; --warn:#E3AE5A; --warn-soft:#3A2C14; --bad:#F08A80; --bad-soft:#3D1D1A; --idle:#A0A8A4; --idle-soft:#252D2A; --info:#8FA9EA; --info-soft:#1D2743;
+  --bg:#0A1320; --surface:#101C2D; --sunk:#08101B; --ink:#E6ECF4; --muted:#93A1B5; --line:#22324A;
+  --accent:#00D4B2; --accent-soft:#0F3A3F; --on-accent:#002E5D; --brand:#E6ECF4; --brand2:#00D4B2; --brand2-soft:#0F3A3F;
+  --ok:#6BCB8E; --ok-soft:#173222; --warn:#E3AE5A; --warn-soft:#3A2C14; --bad:#F08A80; --bad-soft:#3D1D1A; --idle:#A0A8B4; --idle-soft:#1E2A3A; --info:#8FB3EA; --info-soft:#1B2A44;
   --shadow:0 10px 40px rgba(0,0,0,.5);
-  --pil-f:#2A2142; --pil-b:#A78BFA; --tre-f:#16301F; --tre-b:#4ADE80; --rea-f:#1A2744; --rea-b:#60A5FA; --bod-f:#3A2415; --bod-b:#FB923C; --ava-f:#3A1A28; --ava-b:#F472B6; --out-f:#252D2A; --out-b:#A0A8A4;
+  --pil-f:#2A2142; --pil-b:#A78BFA; --tre-f:#0F3A3F; --tre-b:#00D4B2; --rea-f:#16284A; --rea-b:#7FA8E0; --bod-f:#3A2415; --bod-b:#FB923C; --ava-f:#3A1A28; --ava-b:#F472B6; --out-f:#1E2A3A; --out-b:#A0A8B4;
   color-scheme:dark}
 *{box-sizing:border-box} [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
@@ -192,3 +193,15 @@ a{color:var(--accent)}
 .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .muted{color:var(--muted)}
 .right{text-align:right}
+
+/* logo: máscara PNG pintada com a cor da marca, funciona no claro e no escuro */
+.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none}
+.logo .sym,.logo .word{display:block;background:var(--brand);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center}
+.logo .sym{width:30px;height:32px;-webkit-mask-image:url(/logo-simbolo.png);mask-image:url(/logo-simbolo.png)}
+.logo .word{width:74px;height:30px;-webkit-mask-image:url(/logo-nome.png);mask-image:url(/logo-nome.png)}
+.login .logo{flex-direction:column;gap:14px;align-self:center;margin-bottom:4px}
+.login .logo .sym{width:56px;height:60px}
+.login .logo .word{width:136px;height:56px}
+.tabs button[aria-selected="true"]{border-bottom-color:var(--brand2)}
+header.top{border-bottom:1px solid var(--line)}
+.btn.pri:hover{filter:brightness(1.12)}
