@@ -2,7 +2,15 @@ export const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 export const DIAS_L = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 export const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 export const MESES_PER: Record<string, number> = { Mensal: 1, Trimestral: 3, Semestral: 6, Anual: 12 }
-export const FORMAS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Link de pagamento']
+export const FORMAS = ['Pix', 'Cartão de débito', 'Cartão de crédito', 'Dinheiro', 'Social', 'Hub']
+export interface Forma { nome: string; taxa: number; taxa_parcelado?: number | null; imposto: number; ativo: boolean }
+export const formasDe = (config: Record<string, any>): Forma[] => Array.isArray(config.formas) && config.formas.length ? config.formas : FORMAS.map(n => ({ nome: n, taxa: 0, imposto: 0, ativo: true }))
+export function descontoDe(config: Record<string, any>, forma: string, parcelas: number) {
+  const f = formasDe(config).find(x => x.nome.toLowerCase() === forma.toLowerCase())
+  if (!f) return { taxa: 0, imposto: 0 }
+  const taxa = parcelas > 1 && f.taxa_parcelado != null ? Number(f.taxa_parcelado) : Number(f.taxa || 0)
+  return { taxa, imposto: Number(f.imposto || 0) }
+}
 const pad = (n: number) => String(n).padStart(2, '0')
 export const iso = (d: Date) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 export const parse = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d) }

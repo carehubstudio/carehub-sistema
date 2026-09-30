@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { sb } from '../lib/supabase'
 import { useBase } from '../lib/store'
 import type { Pagamento } from '../lib/types'
-import { addMonths, baixar, br, brl, csv, FORMAS, hoje, mesLabel } from '../lib/util'
+import { addMonths, baixar, br, brl, csv, formasDe, hoje, mesLabel } from '../lib/util'
 import { PagamentoForm } from '../components/forms'
 import { Empty } from '../components/ui'
 
@@ -11,7 +11,7 @@ function Barras({ arr }: { arr: [string, number][] }) {
   return arr.length ? <div className="bars">{arr.slice(0, 8).map(([k, v]) => <div className="bar" key={k}><span>{k}</span><span className="track"><i style={{ width: (v / mx * 100).toFixed(1) + '%' }} /></span><span className="num">{brl(v)}</span></div>)}</div> : <div className="sub">Sem dados.</div>
 }
 export function Financeiro() {
-  const { clientes, profissionais, perfil } = useBase()
+  const { clientes, profissionais, perfil, config } = useBase()
   const [mes, setMes] = useState(hoje().slice(0, 7)); const [prof, setProf] = useState(''); const [forma, setForma] = useState('')
   const [pags, setPags] = useState<Pagamento[]>([]); const [modal, setModal] = useState<null | { p?: Pagamento }>(null)
   const gestao = perfil.papel === 'gestao'
@@ -35,7 +35,7 @@ export function Financeiro() {
     <div className="toolbar">
       <div className="datenav"><button className="btn sm" onClick={() => setMes(addMonths(mes + '-01', -1).slice(0, 7))} aria-label="Mês anterior">‹</button><strong>{mesLabel(mes)}</strong><button className="btn sm" onClick={() => setMes(addMonths(mes + '-01', 1).slice(0, 7))} aria-label="Próximo mês">›</button></div>
       <select value={prof} onChange={e => setProf(e.target.value)} aria-label="Profissional"><option value="">Todos os profissionais</option>{profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>
-      <select value={forma} onChange={e => setForma(e.target.value)} aria-label="Forma"><option value="">Todas as formas</option>{FORMAS.map(f => <option key={f}>{f}</option>)}</select>
+      <select value={forma} onChange={e => setForma(e.target.value)} aria-label="Forma"><option value="">Todas as formas</option>{formasDe(config).map(f => <option key={f.nome}>{f.nome}</option>)}</select>
     </div>
     <div className="kpis">
       <div className="kpi"><span>Total recebido</span><b className="num">{brl(tot)}</b></div>

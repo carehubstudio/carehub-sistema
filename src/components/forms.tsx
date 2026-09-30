@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { sb } from '../lib/supabase'
 import { tituloContrato, useBase, valorCobranca } from '../lib/store'
 import type { Atendimento, Cliente, Contrato, Pagamento, Produto, StatusAt } from '../lib/types'
-import { addMonths, br, brl, DIAS, FORMAS, hm, hoje, MESES_PER, norm, parse } from '../lib/util'
+import { addMonths, br, brl, descontoDe, DIAS, formasDe, hm, hoje, MESES_PER, norm, parse } from '../lib/util'
 import { Confirmar, Modal } from './ui'
 
 const erro = (toast: (m: string) => void, e: any) => {
@@ -176,10 +176,7 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
   const [busy, setBusy] = useState(false)
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value })
   const novoVenc = !pagamento && ct && ct.tipo === 'plano' && ct.meses ? addMonths(ct.vencimento || f.data, ct.meses) : null
-  const taxas = config.taxas || {}
-  const kTaxa = f.forma === 'Cartão de crédito' && +f.parcelas > 1 ? 'Cartão de crédito parcelado' : f.forma
-  const fixo = (config.modo_desconto || 'fixo') === 'fixo'
-  const taxa = fixo ? Number(config.desconto_fixo_pct || 0) : Number(taxas[kTaxa] || 0), imp = fixo ? 0 : Number(config.imposto_pct || 0)
+  const { taxa, imposto: imp } = descontoDe(config, f.forma, Number(f.parcelas) || 1)
   const liq = f.valor ? Number(f.valor) * (1 - (taxa + imp) / 100) : 0
 
   useEffect(() => { if (pendCt && contratos.has(pendCt)) { escolheCt(pendCt); setPendCt(null) } }, [pendCt, contratos])
@@ -235,14 +232,14 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
       </select>{item?.tipo === 'pacote' && <span className="sub">O contrato do pacote será criado automaticamente.</span>}</label>}
       <label className="f">Data<input id="pg_data" type="date" required value={f.data} onChange={set('data')} /></label>
       <label className="f">Valor (R$)<input id="pg_valor" type="number" step="0.01" min="0" required value={f.valor} onChange={set('valor')} /></label>
-      <label className="f">Forma<select id="pg_forma" value={f.forma} onChange={set('forma')}>{FORMAS.map(x => <option key={x}>{x}</option>)}</select></label>
+      <label className="f">Forma<select id="pg_forma" value={f.forma} onChange={set('forma')}>{formasDe(config).filter(x => x.ativo !== false || x.nome === f.forma).map(x => <option key={x.nome}>{x.nome}</option>)}</select></label>
       <label className="f">Parcelas<select id="pg_parc" value={f.parcelas} onChange={set('parcelas')}>{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => <option key={n} value={n}>{n === 1 ? 'À vista' : n + 'x'}</option>)}</select></label>
       <label className="f">Profissional (repasse)<select id="pg_prof" value={f.profissional_id} onChange={set('profissional_id')}><option value="">Nenhum (100% estúdio)</option>{profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <label className="f">CV / autorização<input id="pg_cv" value={f.cv} onChange={set('cv')} /></label>
       <label className="f">Nota fiscal<input id="pg_nf" value={f.nf} onChange={set('nf')} /></label>
       <label className="f">Pago por (se outra pessoa)<input id="pg_pagante" value={f.pagante} onChange={set('pagante')} /></label>
       <label className="f full">Observação<input id="pg_obs" value={f.obs} onChange={set('obs')} /></label>
-      {perfil.papel === 'gestao' && f.valor && <p className="sub full" style={{ margin: 0 }}>Líquido estimado {brl(liq)} ({fixo ? `desconto fixo ${taxa}%` : `taxa ${taxa}% · imposto ${imp}%`}).{ct?.tipo === 'pacote' || item?.tipo === 'pacote' ? ' Pacote: o repasse é lançado a cada sessão realizada.' : ''}</p>}
+      {perfil.papel === 'gestao' && f.valor && <p className="sub full" style={{ margin: 0 }}>Líquido estimado {brl(liq)} (taxa {taxa}% · imposto {imp}%).{ct?.tipo === 'pacote' || item?.tipo === 'pacote' ? ' Pacote: o repasse é lançado a cada sessão realizada.' : ''}</p>}
       {novoVenc && <label className="check full"><input type="checkbox" checked={renova} onChange={e => setRenova(e.target.checked)} /> Atualizar o vencimento do contrato para {br(novoVenc)}</label>}
       <footer>{pagamento && perfil.papel === 'gestao' ? <Confirmar label="Excluir" onConfirm={excluir} /> : <span />}<div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>{pagamento ? 'Salvar' : 'Registrar'}</button></div></footer>
     </form>
