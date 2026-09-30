@@ -73,6 +73,8 @@ export function ContratoForm({ contrato, clienteId, onClose, onSaved }: { contra
     const venc = p.tipo === 'pacote' ? (p.validade_meses ? addMonths(f.inicio, p.validade_meses) : '') : addMonths(f.inicio, m)
     setF(v => ({ ...v, modalidade: p.modalidade, valor: String(valor), sessoes: p.sessoes ? String(p.sessoes) : '', vencimento: venc, descricao: '' }))
   }
+  // contrato novo: já preenche com o produto sugerido
+  useEffect(() => { if (!contrato) aplicar(base, freq, per) }, [])
   const hint = sel ? (sel.tipo === 'pacote'
     ? `${sel.sessoes} sessão(ões) · ${brl(sel.valor / (sel.sessoes || 1))} por sessão${sel.validade_meses ? ' · válido por ' + sel.validade_meses + ' meses' : ''}. ${sel.nota || ''}`
     : sel.tipo === 'preco_fixo' ? `${brl(sel.valor)} por ${sel.periodicidade === 'Mensal' ? 'mês' : 'trimestre'}. ${sel.nota || ''}`
