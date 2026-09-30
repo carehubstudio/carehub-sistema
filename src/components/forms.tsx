@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { sb } from '../lib/supabase'
 import { tituloContrato, useBase, valorCobranca } from '../lib/store'
 import type { Atendimento, Cliente, Contrato, Pagamento, Produto, StatusAt } from '../lib/types'
@@ -11,9 +11,9 @@ const erro = (toast: (m: string) => void, e: any) => {
 }
 
 // ---------------- Cliente ----------------
-export function ClienteForm({ cliente, onClose, onSaved }: { cliente?: Cliente; onClose: () => void; onSaved?: (id: string) => void }) {
+export function ClienteForm({ cliente, nomeInicial, onClose, onSaved }: { cliente?: Cliente; nomeInicial?: string; onClose: () => void; onSaved?: (id: string, nome: string) => void }) {
   const { toast, recarregar } = useBase()
-  const [f, setF] = useState({ nome: cliente?.nome || '', telefone: cliente?.telefone || '', email: cliente?.email || '', nascimento: cliente?.nascimento || '', status: cliente?.status || 'ativo', obs: cliente?.obs || '' })
+  const [f, setF] = useState({ nome: cliente?.nome || nomeInicial || '', telefone: cliente?.telefone || '', email: cliente?.email || '', nascimento: cliente?.nascimento || '', status: cliente?.status || 'ativo', obs: cliente?.obs || '' })
   const [busy, setBusy] = useState(false)
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value })
   async function salvar(e: FormEvent) {
@@ -23,7 +23,7 @@ export function ClienteForm({ cliente, onClose, onSaved }: { cliente?: Cliente; 
     const r = cliente ? await sb.from('clientes').update(doc).eq('id', cliente.id).select('id').single() : await sb.from('clientes').insert(doc).select('id').single()
     setBusy(false)
     if (r.error) return erro(toast, r.error)
-    await recarregar(); toast(cliente ? 'Cliente atualizado' : 'Cliente cadastrado'); onSaved?.(r.data.id); onClose()
+    await recarregar(); toast(cliente ? 'Cliente atualizado' : 'Cliente cadastrado'); onSaved?.(r.data.id, doc.nome); onClose()
   }
   return <Modal title={cliente ? 'Editar cliente' : 'Novo cliente'} onClose={onClose}>
     <form onSubmit={salvar}>
@@ -40,7 +40,7 @@ export function ClienteForm({ cliente, onClose, onSaved }: { cliente?: Cliente; 
 
 // ---------------- Contrato ----------------
 type H = { dia_semana: number; hora: string }
-export function ContratoForm({ contrato, clienteId, onClose }: { contrato?: Contrato; clienteId: string; onClose: () => void }) {
+export function ContratoForm({ contrato, clienteId, onClose, onSaved }: { contrato?: Contrato; clienteId: string; onClose: () => void; onSaved?: (id: string) => void }) {
   const { produtos, profissionais, horarios, toast, recarregar, clientes } = useBase()
   const semanais = produtos.filter(p => p.tipo === 'plano_semanal' && p.ativo)
   const grupos = [...new Set(semanais.map(p => p.grupo))]
@@ -97,7 +97,7 @@ export function ContratoForm({ contrato, clienteId, onClose }: { contrato?: Cont
     if (d.error) { setBusy(false); return erro(toast, d.error) }
     const uniq = [...new Map(hs.filter(h => h.hora).map(h => [h.dia_semana + '@' + h.hora, h])).values()]
     if (uniq.length) { const i = await sb.from('horarios').insert(uniq.map(h => ({ contrato_id: id, ...h }))); if (i.error) { setBusy(false); return erro(toast, i.error) } }
-    await recarregar(); setBusy(false); toast('Contrato salvo'); onClose()
+    await recarregar(); setBusy(false); toast('Contrato salvo'); onSaved?.(id); onClose()
   }
   async function excluir() {
     if (!contrato) return
@@ -143,12 +143,22 @@ export function ContratoForm({ contrato, clienteId, onClose }: { contrato?: Cont
   </Modal>
 }
 
+// Aviso + atalho quando o nome digitado não corresponde a um cliente cadastrado
+function ClienteNaoEncontrado({ nome, onCadastrar }: { nome: string; onCadastrar: () => void }) {
+  if (nome.trim().length < 3) return null
+  return <div className="note full inline" style={{ justifyContent: 'space-between' }}>
+    <span>Cliente não encontrado.</span>
+    <button type="button" className="btn sm pri" onClick={onCadastrar}>+ Cadastrar “{nome.trim()}”</button>
+  </div>
+}
+
 // ---------------- Pagamento ----------------
 export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSaved }: { pagamento?: Pagamento; contratoId?: string; clienteId?: string; onClose: () => void; onSaved?: () => void }) {
   const { clientes, contratos, produtos, profissionais, config, perfil, toast, recarregar } = useBase()
   const ct0 = contratoId ? contratos.get(contratoId) : pagamento?.contrato_id ? contratos.get(pagamento.contrato_id) : undefined
   const cli0 = clientes.get(pagamento?.cliente_id || ct0?.cliente_id || clienteId || '')
   const [nome, setNome] = useState(cli0?.nome || '')
+  const [sub, setSub] = useState<null | 'cli' | 'ct'>(null); const [pendCt, setPendCt] = useState<string | null>(null)
   const cli = useMemo(() => [...clientes.values()].find(c => norm(c.nome) === norm(nome)), [nome, clientes])
   const cts = cli ? [...contratos.values()].filter(c => c.cliente_id === cli.id) : []
   const [ctId, setCtId] = useState(ct0?.id || '')
@@ -170,6 +180,7 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
   const taxa = fixo ? Number(config.desconto_fixo_pct || 0) : Number(taxas[kTaxa] || 0), imp = fixo ? 0 : Number(config.imposto_pct || 0)
   const liq = f.valor ? Number(f.valor) * (1 - (taxa + imp) / 100) : 0
 
+  useEffect(() => { if (pendCt && contratos.has(pendCt)) { escolheCt(pendCt); setPendCt(null) } }, [pendCt, contratos])
   function escolheCt(id: string) { setCtId(id); const c = contratos.get(id); if (c) { setItemId(''); setF(v => ({ ...v, valor: String(valorCobranca(c) ?? ''), profissional_id: c.profissional_id || '' })) } }
   function escolheItem(id: string) { setItemId(id); const p = produtos.find(x => x.id === id); if (p) { setCtId(''); setF(v => ({ ...v, valor: String(p.valor) })) } }
 
@@ -210,11 +221,12 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
   return <Modal title={pagamento ? 'Editar pagamento' : 'Registrar pagamento'} onClose={onClose}>
     <form onSubmit={salvar}>
       <label className="f full">Cliente<input id="pg_cli" list="dlClientes" required value={nome} onChange={e => { setNome(e.target.value); setCtId('') }} placeholder="Digite o nome" autoComplete="off" /></label>
+      {!cli && !pagamento && <ClienteNaoEncontrado nome={nome} onCadastrar={() => setSub('cli')} />}
       <datalist id="dlClientes">{[...clientes.values()].map(c => <option key={c.id} value={c.nome} />)}</datalist>
       <label className="f full">Contrato<select id="pg_ct" value={ctId} onChange={e => escolheCt(e.target.value)}>
         <option value="">{cli ? (cts.length ? 'Sem contrato (venda avulsa)' : 'Cliente sem contrato') : 'Escolha o cliente primeiro'}</option>
         {cts.map(c => <option key={c.id} value={c.id}>{tituloContrato(c)}{c.status !== 'ativo' ? ' (encerrado)' : ''}{c.vencimento ? ' · vence ' + br(c.vencimento) : ''}</option>)}
-      </select></label>
+      </select>{cli && !pagamento && <button type="button" className="btn sm" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => setSub('ct')}>+ Novo contrato para {cli.nome.split(' ')[0]}</button>}</label>
       {!ctId && !pagamento && <label className="f full">Item da tabela<select id="pg_item" value={itemId} onChange={e => escolheItem(e.target.value)}>
         <option value="">—</option>
         {[...new Set(vendaveis.map(p => p.grupo))].map(g => <optgroup key={g} label={g}>{vendaveis.filter(p => p.grupo === g).map(p => <option key={p.id} value={p.id}>{p.nome} · {brl(p.valor)}</option>)}</optgroup>)}
@@ -232,6 +244,8 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
       {novoVenc && <label className="check full"><input type="checkbox" checked={renova} onChange={e => setRenova(e.target.checked)} /> Atualizar o vencimento do contrato para {br(novoVenc)}</label>}
       <footer>{pagamento && perfil.papel === 'gestao' ? <Confirmar label="Excluir" onConfirm={excluir} /> : <span />}<div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>{pagamento ? 'Salvar' : 'Registrar'}</button></div></footer>
     </form>
+    {sub === 'cli' && <ClienteForm nomeInicial={nome.trim()} onClose={() => setSub(null)} onSaved={(_, n) => { setNome(n); setCtId('') }} />}
+    {sub === 'ct' && cli && <ContratoForm clienteId={cli.id} onClose={() => setSub(null)} onSaved={id => setPendCt(id)} />}
   </Modal>
 }
 
@@ -277,7 +291,7 @@ export function AtendimentoModal({ slot, onClose, onSaved, abrirCliente }: { slo
 
 export function NovoAgendamento({ data, onClose, onSaved }: { data: string; onClose: () => void; onSaved: () => void }) {
   const { clientes, contratos, profissionais, toast } = useBase()
-  const [nome, setNome] = useState(''); const [ctId, setCtId] = useState(''); const [f, setF] = useState({ data, hora: '07:00', profissional_id: '', obs: '' })
+  const [nome, setNome] = useState(''); const [ctId, setCtId] = useState(''); const [sub, setSub] = useState<null | 'cli' | 'ct'>(null); const [f, setF] = useState({ data, hora: '07:00', profissional_id: '', obs: '' })
   const cli = [...clientes.values()].find(c => norm(c.nome) === norm(nome))
   const cts = cli ? [...contratos.values()].filter(c => c.cliente_id === cli.id && c.status === 'ativo') : []
   async function salvar(e: FormEvent) {
@@ -290,15 +304,18 @@ export function NovoAgendamento({ data, onClose, onSaved }: { data: string; onCl
   return <Modal title="Novo agendamento" onClose={onClose}>
     <form onSubmit={salvar}>
       <label className="f full">Cliente<input id="ag_cli" list="dlClientes2" required value={nome} onChange={e => { setNome(e.target.value); setCtId('') }} placeholder="Digite o nome" autoComplete="off" autoFocus /></label>
+      {!cli && <ClienteNaoEncontrado nome={nome} onCadastrar={() => setSub('cli')} />}
       <datalist id="dlClientes2">{[...clientes.values()].filter(c => c.status === 'ativo').map(c => <option key={c.id} value={c.nome} />)}</datalist>
       <label className="f full">Contrato / pacote<select id="ag_ct" value={ctId} onChange={e => { setCtId(e.target.value); const c = contratos.get(e.target.value); if (c?.profissional_id) setF(v => ({ ...v, profissional_id: c.profissional_id! })) }}>
         <option value="">{cli ? 'Sem contrato (aula experimental, cortesia…)' : 'Escolha o cliente primeiro'}</option>
-        {cts.map(c => <option key={c.id} value={c.id}>{tituloContrato(c)}</option>)}</select></label>
+        {cts.map(c => <option key={c.id} value={c.id}>{tituloContrato(c)}</option>)}</select>{cli && <button type="button" className="btn sm" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => setSub('ct')}>+ Novo contrato / pacote</button>}</label>
       <label className="f">Data<input id="ag_data" type="date" required value={f.data} onChange={e => setF({ ...f, data: e.target.value })} /></label>
       <label className="f">Horário<input id="ag_hora" type="time" step={900} required value={f.hora} onChange={e => setF({ ...f, hora: e.target.value })} /></label>
       <label className="f">Profissional<select id="ag_prof" value={f.profissional_id} onChange={e => setF({ ...f, profissional_id: e.target.value })}><option value="">—</option>{profissionais.filter(p => p.ativo).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <label className="f">Observação<input id="ag_obs" value={f.obs} onChange={e => setF({ ...f, obs: e.target.value })} /></label>
       <footer><span /><div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri">Agendar</button></div></footer>
     </form>
+    {sub === 'cli' && <ClienteForm nomeInicial={nome.trim()} onClose={() => setSub(null)} onSaved={(_, n) => { setNome(n); setCtId('') }} />}
+    {sub === 'ct' && cli && <ContratoForm clienteId={cli.id} onClose={() => setSub(null)} onSaved={id => setCtId(id)} />}
   </Modal>
 }

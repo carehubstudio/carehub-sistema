@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { StC } from '../lib/store'
 import { diff, hoje } from '../lib/util'
 
@@ -12,8 +12,16 @@ export function ChipContrato({ st, venc }: { st: StC; venc?: string | null }) {
   return <Chip st={st} />
 }
 
+// Pilha de janelas abertas: o Esc fecha só a de cima
+const pilha: symbol[] = []
 function useEsc(fn: () => void) {
-  useEffect(() => { const h = (e: KeyboardEvent) => { if (e.key === 'Escape') fn() }; document.addEventListener('keydown', h); return () => document.removeEventListener('keydown', h) }, [fn])
+  const ref = useRef(fn); ref.current = fn
+  useEffect(() => {
+    const id = Symbol(); pilha.push(id)
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && pilha[pilha.length - 1] === id) ref.current() }
+    document.addEventListener('keydown', h)
+    return () => { document.removeEventListener('keydown', h); const i = pilha.indexOf(id); if (i >= 0) pilha.splice(i, 1) }
+  }, [])
 }
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   useEsc(onClose)
