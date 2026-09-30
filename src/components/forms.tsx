@@ -70,14 +70,14 @@ export function ContratoForm({ contrato, clienteId, onClose, onSaved }: { contra
     if (!p) { if (b.startsWith('g:')) setF(v => ({ ...v, valor: '' })); return }
     const m = p.tipo === 'pacote' ? 0 : p.meses || 1
     const valor = p.tipo === 'preco_fixo' ? Math.round(p.valor / m * 100) / 100 : p.valor
-    const venc = p.tipo === 'pacote' ? (p.validade_meses ? addMonths(f.inicio, p.validade_meses) : '') : addMonths(f.inicio, m)
+    const venc = p.tipo === 'pacote' ? (p.validade_meses ? addMonths(f.inicio, p.validade_meses) : '') : Number(p.valor) === 0 ? '' : addMonths(f.inicio, m)
     setF(v => ({ ...v, modalidade: p.modalidade, valor: String(valor), sessoes: p.sessoes ? String(p.sessoes) : '', vencimento: venc, descricao: '' }))
   }
   // contrato novo: já preenche com o produto sugerido
   useEffect(() => { if (!contrato) aplicar(base, freq, per) }, [])
   const hint = sel ? (sel.tipo === 'pacote'
     ? `${sel.sessoes} sessão(ões) · ${brl(sel.valor / (sel.sessoes || 1))} por sessão${sel.validade_meses ? ' · válido por ' + sel.validade_meses + ' meses' : ''}. ${sel.nota || ''}`
-    : sel.tipo === 'preco_fixo' ? `${brl(sel.valor)} por ${sel.periodicidade === 'Mensal' ? 'mês' : 'trimestre'}. ${sel.nota || ''}`
+    : sel.tipo === 'preco_fixo' ? (Number(sel.valor) === 0 ? `Sem cobrança. ${sel.nota || ''}` : `${brl(sel.valor)} por ${sel.periodicidade === 'Mensal' ? 'mês' : 'trimestre'}. ${sel.nota || ''}`)
       : `Tabela: ${brl(sel.valor)}/mês${meses > 1 ? ' · ' + brl(sel.valor * meses) + ' no período' : ''}. Até ${sel.capacidade} por horário.`)
     : base.startsWith('g:') ? `${freq}× por semana não é vendido no ${per.toLowerCase()}.` : 'Contrato fora da tabela: preencha modalidade e valor.'
 

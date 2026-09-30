@@ -72,7 +72,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;white-space:nowrap}
 .chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .c-ok{background:var(--ok-soft);color:var(--ok)} .c-vence{background:var(--warn-soft);color:var(--warn)} .c-atrasado{background:var(--bad-soft);color:var(--bad)}
-.c-fim{background:var(--warn-soft);color:var(--warn)} .c-sem,.c-inativo,.c-trancado{background:var(--idle-soft);color:var(--idle)} .c-revisar{background:var(--info-soft);color:var(--info)}
+.c-isento{background:var(--brand2-soft);color:var(--accent)} .c-fim{background:var(--warn-soft);color:var(--warn)} .c-sem,.c-inativo,.c-trancado{background:var(--idle-soft);color:var(--idle)} .c-revisar{background:var(--info-soft);color:var(--info)}
 .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:4px}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .empty strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:16px;margin-bottom:4px}

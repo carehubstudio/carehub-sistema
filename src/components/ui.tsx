@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import type { StC } from '../lib/store'
 import { diff, hoje } from '../lib/util'
 
-const LBL: Record<string, string> = { ok: 'Em dia', vence: 'Vence em breve', atrasado: 'Em atraso', sem: 'Sem vencimento', inativo: 'Inativo', trancado: 'Trancado', fim: 'Pacote concluído', encerrado: 'Encerrado' }
+const LBL: Record<string, string> = { ok: 'Em dia', vence: 'Vence em breve', atrasado: 'Em atraso', sem: 'Sem vencimento', inativo: 'Inativo', trancado: 'Trancado', fim: 'Pacote concluído', encerrado: 'Encerrado', isento: 'Isento' }
 export function Chip({ st, extra }: { st: string; extra?: string }) {
   return <span className={'chip c-' + st}>{LBL[st] || st}{extra ? ' · ' + extra : ''}</span>
 }

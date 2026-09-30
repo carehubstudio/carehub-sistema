@@ -75,15 +75,16 @@ export function BaseProvider({ perfil, children }: { perfil: Perfil; children: R
 }
 
 // ---------- regras de negócio ----------
-export type StC = 'ok' | 'vence' | 'atrasado' | 'sem' | 'inativo' | 'fim'
+export type StC = 'ok' | 'vence' | 'atrasado' | 'sem' | 'inativo' | 'fim' | 'isento'
 export function stContrato(c: Contrato, uso?: Uso): StC {
   if (c.status !== 'ativo') return 'inativo'
+  if (c.tipo === 'plano' && c.valor != null && Number(c.valor) === 0) return 'isento'
   if (c.tipo === 'pacote' && c.sessoes && (uso?.usadas || 0) >= c.sessoes) return 'fim'
   if (!c.vencimento) return c.tipo === 'pacote' ? 'ok' : 'sem'
   const d = diff(c.vencimento, hoje())
   if (d < 0) return 'atrasado'; if (d <= 7) return 'vence'; return 'ok'
 }
-export const RANK: Record<string, number> = { atrasado: 0, vence: 1, fim: 2, sem: 2, ok: 3, inativo: 4 }
+export const RANK: Record<string, number> = { atrasado: 0, vence: 1, fim: 2, sem: 2, ok: 3, isento: 3, inativo: 4 }
 export const valorCobranca = (c?: Contrato | null) => !c || c.valor == null ? null : c.tipo === 'pacote' ? Number(c.valor) : Math.round(Number(c.valor) * (c.meses || 1) * 100) / 100
 export const tituloContrato = (c: Contrato) => c.descricao || [c.modalidade, c.frequencia ? c.frequencia + '×/sem' : '', c.tipo === 'pacote' && c.sessoes ? c.sessoes + ' sessões' : ''].filter(Boolean).join(' · ')
 export function capacidade(c: Contrato | undefined, produtos: Produto[]) {
