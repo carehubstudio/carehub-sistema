@@ -5,6 +5,7 @@ import { BaseProvider, useBase } from './lib/store'
 import type { Perfil } from './lib/types'
 import { ClienteDrawer } from './components/ClienteDrawer'
 import { PagamentoForm } from './components/forms'
+import { Modal } from './components/ui'
 import { Dashboard } from './pages/Dashboard'
 import { Agenda } from './pages/Agenda'
 import { Clientes } from './pages/Clientes'
@@ -49,6 +50,18 @@ function NovaSenha({ onDone }: { onDone: () => void }) {
     {err && <div className="err">{err}</div>}<button className="btn pri">Salvar</button></form></div>
 }
 
+function MinhaSenha({ onClose }: { onClose: () => void }) {
+  const { toast } = useBase(); const [s, setS] = useState(''); const [s2, setS2] = useState(''); const [busy, setBusy] = useState(false)
+  return <Modal title="Minha senha" onClose={onClose}><form onSubmit={async e => {
+    e.preventDefault(); if (s.length < 8) return toast('A senha precisa ter pelo menos 8 caracteres.'); if (s !== s2) return toast('As senhas não conferem.')
+    setBusy(true); const r = await sb.auth.updateUser({ password: s }); setBusy(false)
+    if (r.error) toast('Não foi possível trocar a senha: ' + r.error.message); else { toast('Senha alterada'); onClose() } }}>
+    <label className="f full">Nova senha<input type="password" autoComplete="new-password" value={s} onChange={e => setS(e.target.value)} autoFocus /></label>
+    <label className="f full">Repita a nova senha<input type="password" autoComplete="new-password" value={s2} onChange={e => setS2(e.target.value)} /></label>
+    <footer><span /><div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>Salvar</button></div></footer>
+  </form></Modal>
+}
+
 const TABS: { k: string; l: string; papeis: string[] }[] = [
   { k: 'dashboard', l: 'Dashboard', papeis: ['gestao', 'recepcao'] },
   { k: 'agenda', l: 'Agenda', papeis: ['gestao', 'recepcao', 'profissional'] },
@@ -64,7 +77,7 @@ function Shell() {
   const { perfil, carregado } = useBase()
   const tabs = TABS.filter(t => t.papeis.includes(perfil.papel))
   const [tab, setTab] = useState(() => { const h = location.hash.slice(1); return tabs.some(t => t.k === h) ? h : tabs[0].k })
-  const [filtro, setFiltro] = useState<string | undefined>(); const [cli, setCli] = useState<string | null>(null); const [pg, setPg] = useState(false)
+  const [filtro, setFiltro] = useState<string | undefined>(); const [cli, setCli] = useState<string | null>(null); const [pg, setPg] = useState(false); const [senha, setSenha] = useState(false)
   useEffect(() => { history.replaceState(null, '', '#' + tab) }, [tab])
   const ir = (k: string, f?: string) => { setFiltro(f); setTab(k); window.scrollTo(0, 0) }
   const equipe = perfil.papel === 'gestao' || perfil.papel === 'recepcao'
@@ -74,7 +87,7 @@ function Shell() {
       <nav className="tabs" role="tablist">{tabs.map(t => <button key={t.k} role="tab" aria-selected={tab === t.k} onClick={() => ir(t.k)}>{t.l === 'Clientes' && perfil.papel === 'profissional' ? 'Meus alunos' : t.l}</button>)}</nav>
       <div className="topact">
         {equipe && <button className="btn pri" onClick={() => setPg(true)}>+ Pagamento</button>}
-        <div className="userbox"><span>{perfil.nome || perfil.email}</span><button className="btn sm ghost" onClick={() => sb.auth.signOut()}>Sair</button></div>
+        <div className="userbox"><span>{perfil.nome || perfil.email}</span><button className="btn sm ghost" onClick={() => setSenha(true)}>Minha senha</button><button className="btn sm ghost" onClick={() => sb.auth.signOut()}>Sair</button></div>
       </div>
     </div></header>
     <main className="wrap">{!carregado ? <div className="loading">Carregando…</div> :
@@ -88,6 +101,7 @@ function Shell() {
     </main>
     {cli && <ClienteDrawer id={cli} onClose={() => setCli(null)} />}
     {pg && <PagamentoForm onClose={() => setPg(false)} />}
+    {senha && <MinhaSenha onClose={() => setSenha(false)} />}
   </>
 }
 
