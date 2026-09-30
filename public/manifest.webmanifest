@@ -1,0 +1,1 @@
+{ "name": "CareHub Studio", "short_name": "CareHub", "start_url": "/", "display": "standalone", "background_color": "#F3F5F2", "theme_color": "#1D6B58", "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }

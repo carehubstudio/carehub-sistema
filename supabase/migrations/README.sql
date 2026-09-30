@@ -1,0 +1,1 @@
+-- As migrações foram aplicadas pelo painel/MCP; ver histórico em Supabase > Database > Migrations.
