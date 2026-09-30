@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { sb } from '../lib/supabase'
-import { tituloContrato, useBase, valorCobranca } from '../lib/store'
+import { ehAdmin, tituloContrato, useBase, valorCobranca, veTudo } from '../lib/store'
 import type { Atendimento, Cliente, Contrato, Pagamento, Produto, StatusAt } from '../lib/types'
 import { addMonths, br, brl, descontoDe, DIAS, formasDe, hm, hoje, MESES_PER, norm, parse } from '../lib/util'
 import { Confirmar, Modal } from './ui'
@@ -239,9 +239,9 @@ export function PagamentoForm({ pagamento, contratoId, clienteId, onClose, onSav
       <label className="f">Nota fiscal<input id="pg_nf" value={f.nf} onChange={set('nf')} /></label>
       <label className="f">Pago por (se outra pessoa)<input id="pg_pagante" value={f.pagante} onChange={set('pagante')} /></label>
       <label className="f full">Observação<input id="pg_obs" value={f.obs} onChange={set('obs')} /></label>
-      {perfil.papel === 'gestao' && f.valor && <p className="sub full" style={{ margin: 0 }}>Líquido estimado {brl(liq)} (taxa {taxa}% · imposto {imp}%).{ct?.tipo === 'pacote' || item?.tipo === 'pacote' ? ' Pacote: o repasse é lançado a cada sessão realizada.' : ''}</p>}
+      {veTudo(perfil) && f.valor && <p className="sub full" style={{ margin: 0 }}>Líquido estimado {brl(liq)} (taxa {taxa}% · imposto {imp}%).{ct?.tipo === 'pacote' || item?.tipo === 'pacote' ? ' Pacote: o repasse é lançado a cada sessão realizada.' : ''}</p>}
       {novoVenc && <label className="check full"><input type="checkbox" checked={renova} onChange={e => setRenova(e.target.checked)} /> Atualizar o vencimento do contrato para {br(novoVenc)}</label>}
-      <footer>{pagamento && perfil.papel === 'gestao' ? <Confirmar label="Excluir" onConfirm={excluir} /> : <span />}<div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>{pagamento ? 'Salvar' : 'Registrar'}</button></div></footer>
+      <footer>{pagamento && ehAdmin(perfil) ? <Confirmar label="Excluir" onConfirm={excluir} /> : pagamento ? <span className="sub">Só o perfil Ultimate corrige pagamentos.</span> : <span />}<div className="inline"><button type="button" className="btn" onClick={onClose}>{pagamento && !ehAdmin(perfil) ? 'Fechar' : 'Cancelar'}</button>{(!pagamento || ehAdmin(perfil)) && <button className="btn pri" disabled={busy}>{pagamento ? 'Salvar' : 'Registrar'}</button>}</div></footer>
     </form>
     {sub === 'cli' && <ClienteForm nomeInicial={nome.trim()} onClose={() => setSub(null)} onSaved={(_, n) => { setNome(n); setCtId('') }} />}
     {sub === 'ct' && cli && <ContratoForm clienteId={cli.id} onClose={() => setSub(null)} onSaved={id => setPendCt(id)} />}

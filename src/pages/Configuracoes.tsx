@@ -5,7 +5,7 @@ import type { Perfil, Profissional, Regra } from '../lib/types'
 import { br, formasDe, hoje, type Forma } from '../lib/util'
 import { Confirmar, Modal } from '../components/ui'
 
-const PAPEIS: Record<string, string> = { pendente: 'Aguardando liberação', gestao: 'Gestão', recepcao: 'Recepção', profissional: 'Profissional' }
+const PAPEIS: Record<string, string> = { pendente: 'Aguardando liberação', admin: 'Ultimate', gestao: 'Gestão', recepcao: 'Recepção', profissional: 'Profissional' }
 const senhaAleatoria = () => { const c = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = ''; const a = crypto.getRandomValues(new Uint32Array(10)); a.forEach(n => s += c[n % c.length]); return s }
 
 async function chamarUsuarios(body: Record<string, unknown>): Promise<string | null> {
@@ -39,7 +39,7 @@ function NovoUsuario({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
     <form onSubmit={salvar}>
       <label className="f full">Nome<input id="nu_nome" required value={f.nome} onChange={set('nome')} autoFocus /></label>
       <label className="f full">E-mail (será o login)<input id="nu_email" type="email" required value={f.email} onChange={set('email')} /></label>
-      <label className="f">Perfil<select id="nu_papel" value={f.papel} onChange={set('papel')}><option value="recepcao">Recepção</option><option value="profissional">Profissional</option><option value="gestao">Gestão</option></select></label>
+      <label className="f">Perfil<select id="nu_papel" value={f.papel} onChange={set('papel')}><option value="recepcao">Recepção</option><option value="profissional">Profissional</option><option value="gestao">Gestão</option><option value="admin">Ultimate</option></select></label>
       <label className="f">Profissional vinculado<select id="nu_prof" value={f.profissional_id} onChange={set('profissional_id')} disabled={f.papel !== 'profissional'}><option value="">—</option>{profissionais.filter(p => p.ativo).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <label className="f full">Senha provisória<div className="inline"><input id="nu_senha" required minLength={8} value={f.senha} onChange={set('senha')} style={{ flex: 1 }} /><button type="button" className="btn sm" onClick={() => setF({ ...f, senha: senhaAleatoria() })}>Gerar outra</button></div></label>
       <p className="sub full" style={{ margin: 0 }}>O acesso já sai liberado, sem precisar confirmar e-mail.</p>
@@ -65,7 +65,7 @@ const CAMPOS_PROF: [string, string, string?][] = [
   ['email', 'E-mail', 'email'], ['registro', 'Registro profissional (CREF, CREFITO…)'], ['especialidades', 'Especialidades / modalidades'],
   ['inicio', 'Na equipe desde', 'date'], ['cnpj', 'CNPJ (se PJ)'], ['razao_social', 'Razão social'], ['pix', 'Chave Pix'], ['banco', 'Banco / agência / conta'],
 ]
-function ProfissionalForm({ prof, onClose }: { prof?: Profissional; onClose: () => void }) {
+function ProfissionalForm({ prof, onClose, ro }: { prof?: Profissional; onClose: () => void; ro?: boolean }) {
   const { toast, recarregarConfig } = useBase()
   const [nome, setNome] = useState(prof?.nome || ''); const [d, setD] = useState<Dados>({}); const [busy, setBusy] = useState(false); const [uso, setUso] = useState<number | null>(null)
   useEffect(() => {
@@ -92,21 +92,24 @@ function ProfissionalForm({ prof, onClose }: { prof?: Profissional; onClose: () 
     await recarregarConfig(); toast('Profissional excluído'); onClose()
   }
   return <Modal title={prof ? 'Profissional · ' + prof.nome : 'Novo profissional'} onClose={onClose} wide>
-    <form onSubmit={salvar}>
+    <form onSubmit={salvar}><fieldset disabled={ro} style={{ display: 'contents' }}>
       <label className="f">Nome na agenda<input id="pf_nome" required value={nome} onChange={e => setNome(e.target.value)} autoFocus={!prof} /></label>
       <label className="f">Vínculo<select id="pf_vinc" value={d.vinculo || ''} onChange={set('vinculo')}><option value="">—</option>{['PJ', 'CLT', 'Autônomo', 'Parceiro', 'Sócio'].map(v => <option key={v}>{v}</option>)}</select></label>
       {CAMPOS_PROF.map(([k, l, t]) => <label className="f" key={k}>{l}<input id={'pf_' + k} type={t || 'text'} value={d[k] || ''} onChange={set(k)} /></label>)}
       <label className="f full">Endereço<input id="pf_end" value={d.endereco || ''} onChange={set('endereco')} /></label>
       <label className="f full">Observações<textarea id="pf_obs" value={d.obs || ''} onChange={set('obs')} /></label>
       <p className="sub full" style={{ margin: 0 }}>Estes dados só aparecem para a gestão e para o próprio profissional.</p>
+      </fieldset>
+      {ro ? <footer><span className="sub">Somente leitura. Alterações pelo perfil Ultimate.</span><button type="button" className="btn" onClick={onClose}>Fechar</button></footer> :
       <footer>{prof && uso === 0 ? <Confirmar label="Excluir profissional" onConfirm={excluir} /> : prof ? <span className="sub">Tem histórico no sistema: para retirar da equipe, use “Desativar”.</span> : <span />}
-        <div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>Salvar</button></div></footer>
+        <div className="inline"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn pri" disabled={busy}>Salvar</button></div></footer>}
     </form>
   </Modal>
 }
 
 export function Configuracoes() {
   const { profissionais, produtos, config, toast, recarregarConfig, perfil } = useBase()
+  const ro = perfil.papel !== 'admin'
   const [perfis, setPerfis] = useState<Perfil[]>([]); const [regras, setRegras] = useState<Regra[]>([])
   const [modal, setModal] = useState<null | { k: 'novoUser' } | { k: 'senha'; u: Perfil } | { k: 'prof'; p?: Profissional }>(null)
   const [nr, setNr] = useState({ profissional_id: '', modalidade: '', pct_estudio: '', vigencia_inicio: hoje() })
@@ -141,37 +144,38 @@ export function Configuracoes() {
   }
   return <>
     <div className="viewhead"><div><h1>Configurações</h1><p>Usuários, profissionais, regras de repasse, taxas e imposto</p></div></div>
+    {ro && <p className="note" style={{ marginBottom: 16 }}>Seu perfil (Gestão) vê as configurações, mas não pode alterá-las. Mudanças são feitas pelo perfil Ultimate.</p>}
     <div className="cfggrid">
-      <section className="panel"><header><div><h2>Usuários</h2><p>Crie o acesso aqui, ou a pessoa cria em “Criar conta” e você libera o perfil.</p></div><button className="btn pri sm" onClick={() => setModal({ k: 'novoUser' })}>+ Novo usuário</button></header>
+      <section className="panel"><header><div><h2>Usuários</h2><p>Crie o acesso aqui, ou a pessoa cria em “Criar conta” e você libera o perfil.</p></div>{!ro && <button className="btn pri sm" onClick={() => setModal({ k: 'novoUser' })}>+ Novo usuário</button>}</header>
         <div className="tbl"><table><thead><tr><th>Pessoa</th><th>Perfil</th><th>Profissional</th><th></th></tr></thead><tbody>
           {perfis.map(u => <tr key={u.id} style={u.ativo ? undefined : { opacity: .55 }}><td><b>{u.nome || u.email}</b><div className="sub">{u.email}{!u.ativo && ' · bloqueado'}</div></td>
-            <td><select aria-label="Perfil" value={u.papel} disabled={u.id === perfil.id} onChange={e => atualizaPerfil(u.id, { papel: e.target.value as any })}>{Object.entries(PAPEIS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></td>
-            <td><select aria-label="Profissional vinculado" value={u.profissional_id || ''} onChange={e => atualizaPerfil(u.id, { profissional_id: e.target.value || null })}><option value="">—</option>{profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></td>
-            <td className="inline" style={{ flexWrap: 'nowrap' }}>{u.id !== perfil.id && <><button className="btn sm ghost" onClick={() => setModal({ k: 'senha', u })}>Senha</button><button className="btn sm ghost" onClick={() => atualizaPerfil(u.id, { ativo: !u.ativo })}>{u.ativo ? 'Bloquear' : 'Desbloquear'}</button></>}</td></tr>)}
+            <td><select aria-label="Perfil" value={u.papel} disabled={ro || u.id === perfil.id} onChange={e => atualizaPerfil(u.id, { papel: e.target.value as any })}>{Object.entries(PAPEIS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></td>
+            <td><select aria-label="Profissional vinculado" disabled={ro} value={u.profissional_id || ''} onChange={e => atualizaPerfil(u.id, { profissional_id: e.target.value || null })}><option value="">—</option>{profissionais.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></td>
+            <td className="inline" style={{ flexWrap: 'nowrap' }}>{!ro && u.id !== perfil.id && <><button className="btn sm ghost" onClick={() => setModal({ k: 'senha', u })}>Senha</button><button className="btn sm ghost" onClick={() => atualizaPerfil(u.id, { ativo: !u.ativo })}>{u.ativo ? 'Bloquear' : 'Desbloquear'}</button></>}</td></tr>)}
         </tbody></table></div>
-        <p className="sub" style={{ padding: '0 16px 12px' }}>Gestão vê tudo. Recepção opera agenda, clientes e pagamentos, mas não vê repasse nem corrige pagamentos. Profissional vê só a própria agenda, os próprios alunos e o próprio repasse.</p></section>
+        <p className="sub" style={{ padding: '0 16px 12px' }}>Ultimate faz tudo, inclusive alterar configurações, usuários, preços e regras. Gestão vê tudo e opera o dia a dia, mas não altera configurações nem corrige pagamentos. Recepção opera agenda, clientes e pagamentos, mas não vê repasse nem corrige pagamentos. Profissional vê só a própria agenda, os próprios alunos e o próprio repasse.</p></section>
 
-      <section className="panel"><header><div><h2>Profissionais</h2><p>Cadastro com dados pessoais, vínculo e dados para pagamento.</p></div><button className="btn sm" onClick={() => setModal({ k: 'prof' })}>+ Profissional</button></header>
+      <section className="panel"><header><div><h2>Profissionais</h2><p>Cadastro com dados pessoais, vínculo e dados para pagamento.</p></div>{!ro && <button className="btn sm" onClick={() => setModal({ k: 'prof' })}>+ Profissional</button>}</header>
         <div className="pbody listx">{profissionais.map(p => <div key={p.id}><span>{p.nome}{!p.ativo && <span className="tag">inativo</span>}</span>
-          <span className="inline" style={{ flexWrap: 'nowrap' }}><button className="btn sm" onClick={() => setModal({ k: 'prof', p })}>Editar</button>
-            <button className="btn sm ghost" onClick={async () => { if (ok(await sb.from('profissionais').update({ ativo: !p.ativo }).eq('id', p.id), p.ativo ? 'Profissional desativado' : 'Profissional reativado')) recarregarConfig() }}>{p.ativo ? 'Desativar' : 'Reativar'}</button></span></div>)}</div></section>
+          <span className="inline" style={{ flexWrap: 'nowrap' }}><button className="btn sm" onClick={() => setModal({ k: 'prof', p })}>{ro ? 'Ver' : 'Editar'}</button>
+            {!ro && <button className="btn sm ghost" onClick={async () => { if (ok(await sb.from('profissionais').update({ ativo: !p.ativo }).eq('id', p.id), p.ativo ? 'Profissional desativado' : 'Profissional reativado')) recarregarConfig() }}>{p.ativo ? 'Desativar' : 'Reativar'}</button>}</span></div>)}</div></section>
 
       <section className="panel"><header><div><h2>Regras de repasse</h2><p>Percentual que fica com o <b>estúdio</b>, sobre o valor já descontado. Regra por modalidade vale antes da regra geral do profissional.</p></div></header>
         <div className="tbl"><table><thead><tr><th>Profissional</th><th>Modalidade</th><th className="num">% estúdio</th><th className="num">% profissional</th><th>Desde</th><th></th></tr></thead><tbody>
           {regras.map(r => <tr key={r.id}><td>{nome(r.profissional_id)}</td><td className="sub">{r.modalidade || 'Todas'}</td><td className="num">{r.pct_estudio}%</td><td className="num">{100 - r.pct_estudio}%</td><td className="num">{br(r.vigencia_inicio)}</td>
-            <td><Confirmar className="btn sm ghost" label="Excluir" onConfirm={async () => { if (ok(await sb.from('regras_repasse').delete().eq('id', r.id), 'Regra excluída')) carregar() }} /></td></tr>)}
+            <td>{!ro && <Confirmar className="btn sm ghost" label="Excluir" onConfirm={async () => { if (ok(await sb.from('regras_repasse').delete().eq('id', r.id), 'Regra excluída')) carregar() }} />}</td></tr>)}
           {!regras.length && <tr><td colSpan={6} className="sub">Nenhuma regra ainda. Sem regra, o repasse aparece como “sem regra” e não é calculado.</td></tr>}
         </tbody></table></div>
-        <div className="pbody inline" style={{ borderTop: '1px solid var(--line)' }}>
+        {!ro && <div className="pbody inline" style={{ borderTop: '1px solid var(--line)' }}>
           <select aria-label="Profissional" value={nr.profissional_id} onChange={e => setNr({ ...nr, profissional_id: e.target.value })}><option value="">Profissional…</option>{profissionais.filter(p => p.ativo).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>
           <select aria-label="Modalidade" value={nr.modalidade} onChange={e => setNr({ ...nr, modalidade: e.target.value })}><option value="">Todas as modalidades</option>{mods.map(m => <option key={m}>{m}</option>)}</select>
           <input aria-label="% do estúdio" type="number" min="0" max="100" step="0.5" placeholder="% estúdio" style={{ width: 110 }} value={nr.pct_estudio} onChange={e => setNr({ ...nr, pct_estudio: e.target.value })} />
           <input aria-label="Vigência" type="date" value={nr.vigencia_inicio} onChange={e => setNr({ ...nr, vigencia_inicio: e.target.value })} />
           <button className="btn pri" onClick={addRegra}>Incluir regra</button>
-        </div></section>
+        </div>}</section>
 
       <section className="panel"><header><div><h2>Taxas e imposto por forma de pagamento</h2><p>Descontados do valor pago antes de calcular o repasse. Cada pagamento guarda as taxas da data em que foi lançado; mudar aqui vale para os próximos.</p></div></header>
-        <div className="tbl"><table><thead><tr><th>Forma</th><th className="num">Taxa (%)</th><th className="num">Taxa parcelado (%)</th><th className="num">Imposto (%)</th><th className="num">Desconto total</th><th></th></tr></thead><tbody>
+        <fieldset disabled={ro} style={{ display: 'contents' }}><div className="tbl"><table><thead><tr><th>Forma</th><th className="num">Taxa (%)</th><th className="num">Taxa parcelado (%)</th><th className="num">Imposto (%)</th><th className="num">Desconto total</th><th></th></tr></thead><tbody>
           {formas.map((f, i) => { const upd = (k: string, v: any) => setFormas(formas.map((x, j) => j === i ? { ...x, [k]: v } : x)); const tot = (Number(f.taxa.replace(',', '.')) || 0) + (Number(f.imposto.replace(',', '.')) || 0)
             return <tr key={i} style={f.ativo ? undefined : { opacity: .5 }}>
               <td><input aria-label="Nome da forma" value={f.nome} onChange={e => upd('nome', e.target.value)} style={{ width: '100%', minWidth: 130 }} /></td>
@@ -179,16 +183,16 @@ export function Configuracoes() {
               <td className="num"><input className="tbin" aria-label="Taxa parcelado" inputMode="decimal" placeholder="—" value={f.taxa_parcelado} onChange={e => upd('taxa_parcelado', e.target.value)} /></td>
               <td className="num"><input className="tbin" aria-label="Imposto" inputMode="decimal" value={f.imposto} onChange={e => upd('imposto', e.target.value)} /></td>
               <td className="num">{tot.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%</td>
-              <td><button className="btn sm ghost" onClick={() => upd('ativo', !f.ativo)}>{f.ativo ? 'Desativar' : 'Reativar'}</button></td></tr> })}
+              <td>{!ro && <button className="btn sm ghost" onClick={() => upd('ativo', !f.ativo)}>{f.ativo ? 'Desativar' : 'Reativar'}</button>}</td></tr> })}
         </tbody></table></div>
-        <div className="pbody inline" style={{ borderTop: '1px solid var(--line)', justifyContent: 'space-between' }}>
+        {!ro && <div className="pbody inline" style={{ borderTop: '1px solid var(--line)', justifyContent: 'space-between' }}>
           <button className="btn sm" onClick={() => setFormas([...formas, { nome: '', taxa: '0', taxa_parcelado: '', imposto: '0', ativo: true }])}>+ Forma de pagamento</button>
           <div className="inline"><label className="inline sub">Aviso mínimo de falta (horas)<input className="tbin" type="number" min="0" value={prazo} onChange={e => setPrazo(e.target.value)} /></label><button className="btn pri" onClick={salvarFin}>Salvar</button></div>
-        </div>
+        </div>}</fieldset>
         <p className="sub" style={{ padding: '0 16px 12px', margin: 0 }}>“Taxa parcelado” vale quando o pagamento tem 2 parcelas ou mais; em branco, usa a taxa normal. Formas desativadas somem da lista de pagamento, mas os lançamentos antigos continuam com elas.</p></section>
     </div>
     {modal?.k === 'novoUser' && <NovoUsuario onClose={() => setModal(null)} onSaved={carregar} />}
     {modal?.k === 'senha' && <RedefinirSenha u={modal.u} onClose={() => setModal(null)} />}
-    {modal?.k === 'prof' && <ProfissionalForm prof={modal.p} onClose={() => setModal(null)} />}
+    {modal?.k === 'prof' && <ProfissionalForm prof={modal.p} ro={ro} onClose={() => setModal(null)} />}
   </>
 }

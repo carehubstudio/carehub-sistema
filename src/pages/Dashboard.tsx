@@ -13,7 +13,7 @@ export function Dashboard({ abrirCliente, ir }: { abrirCliente: (id: string) => 
   const [rec, setRec] = useState<{ m: number; a: number } | null>(null)
   const [pg, setPg] = useState<string | null>(null)
   const { porDia } = useSlots(t, t)
-  const gestao = perfil.papel === 'gestao'
+  const gestao = perfil.papel === 'admin'
   useEffect(() => {
     sb.from('pagamentos').select('valor,data').gte('data', mesAnt + '-01').then(r => {
       const d = (r.data as { valor: number; data: string }[]) || []

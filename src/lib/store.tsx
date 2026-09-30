@@ -85,6 +85,10 @@ export function stContrato(c: Contrato, uso?: Uso): StC {
   if (d < 0) return 'atrasado'; if (d <= 7) return 'vence'; return 'ok'
 }
 export const RANK: Record<string, number> = { atrasado: 0, vence: 1, fim: 2, sem: 2, ok: 3, isento: 3, inativo: 4 }
+// admin = Ultimate (acesso total); gestao = vê tudo, sem alterar configurações
+export const ehAdmin = (p: { papel: string }) => p.papel === 'admin'
+export const veTudo = (p: { papel: string }) => p.papel === 'admin' || p.papel === 'gestao'
+export const ehEquipe = (p: { papel: string }) => p.papel === 'admin' || p.papel === 'gestao' || p.papel === 'recepcao'
 export const valorCobranca = (c?: Contrato | null) => !c || c.valor == null ? null : c.tipo === 'pacote' ? Number(c.valor) : Math.round(Number(c.valor) * (c.meses || 1) * 100) / 100
 export const tituloContrato = (c: Contrato) => c.descricao || [c.modalidade, c.frequencia ? c.frequencia + '×/sem' : '', c.tipo === 'pacote' && c.sessoes ? c.sessoes + ' sessões' : ''].filter(Boolean).join(' · ')
 export function capacidade(c: Contrato | undefined, produtos: Produto[]) {

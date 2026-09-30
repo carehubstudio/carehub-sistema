@@ -1,4 +1,4 @@
-export type Papel = 'pendente' | 'gestao' | 'recepcao' | 'profissional'
+export type Papel = 'pendente' | 'admin' | 'gestao' | 'recepcao' | 'profissional'
 export interface Perfil { id: string; nome: string; email: string | null; papel: Papel; profissional_id: string | null; ativo: boolean }
 export interface Profissional { id: string; nome: string; ativo: boolean }
 export interface Produto {

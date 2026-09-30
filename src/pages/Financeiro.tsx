@@ -14,7 +14,7 @@ export function Financeiro() {
   const { clientes, profissionais, perfil, config } = useBase()
   const [mes, setMes] = useState(hoje().slice(0, 7)); const [prof, setProf] = useState(''); const [forma, setForma] = useState('')
   const [pags, setPags] = useState<Pagamento[]>([]); const [modal, setModal] = useState<null | { p?: Pagamento }>(null)
-  const gestao = perfil.papel === 'gestao'
+  const gestao = perfil.papel === 'admin' || perfil.papel === 'gestao'
   const carregar = useCallback(() => {
     const fim = addMonths(mes + '-01', 1)
     sb.from('pagamentos').select('*').gte('data', mes + '-01').lt('data', fim).order('data', { ascending: false }).then(r => setPags((r.data as Pagamento[]) || []))

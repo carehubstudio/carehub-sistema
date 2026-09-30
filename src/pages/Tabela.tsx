@@ -10,7 +10,7 @@ const BASE_SESSAO: Record<string, number> = { 'Reabilitação Funcional': 160, '
 export function Tabela() {
   const { produtos, config, perfil, toast, recarregarConfig } = useBase()
   const [edit, setEdit] = useState(false); const [vals, setVals] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false)
-  const gestao = perfil.papel === 'gestao'
+  const gestao = perfil.papel === 'admin'
   const ativos = produtos.filter(p => p.ativo)
   const num = (v: number) => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 2 })
   const cell = (p?: Produto) => !p ? <span className="sub">—</span> : edit ? <input className="tbin" type="number" step="0.01" aria-label={p.nome} value={vals[p.id] ?? String(p.valor)} onChange={e => setVals({ ...vals, [p.id]: e.target.value })} /> : num(p.valor)

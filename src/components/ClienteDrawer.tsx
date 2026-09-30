@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { sb } from '../lib/supabase'
-import { stContrato, tituloContrato, useBase, valorCobranca } from '../lib/store'
+import { ehEquipe, stContrato, tituloContrato, useBase, valorCobranca } from '../lib/store'
 import type { Contrato, Pagamento } from '../lib/types'
 import { br, brl, diff, DIAS, hm, hoje } from '../lib/util'
 import { ClienteForm, ContratoForm, PagamentoForm } from './forms'
@@ -11,7 +11,7 @@ export function ClienteDrawer({ id, onClose }: { id: string; onClose: () => void
   const a = clientes.get(id)
   const [pags, setPags] = useState<Pagamento[]>([])
   const [modal, setModal] = useState<null | { k: 'cli' } | { k: 'ct'; c?: Contrato } | { k: 'pg'; ct?: string; p?: Pagamento }>(null)
-  const equipe = perfil.papel === 'gestao' || perfil.papel === 'recepcao'
+  const equipe = ehEquipe(perfil)
   const carregaPags = () => { if (equipe) sb.from('pagamentos').select('*').eq('cliente_id', id).order('data', { ascending: false }).limit(30).then(r => setPags((r.data as Pagamento[]) || [])) }
   useEffect(carregaPags, [id])
   if (!a) return null

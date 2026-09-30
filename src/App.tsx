@@ -63,14 +63,14 @@ function MinhaSenha({ onClose }: { onClose: () => void }) {
 }
 
 const TABS: { k: string; l: string; papeis: string[] }[] = [
-  { k: 'dashboard', l: 'Dashboard', papeis: ['gestao', 'recepcao'] },
-  { k: 'agenda', l: 'Agenda', papeis: ['gestao', 'recepcao', 'profissional'] },
-  { k: 'clientes', l: 'Clientes', papeis: ['gestao', 'recepcao', 'profissional'] },
-  { k: 'contratos', l: 'Contratos', papeis: ['gestao', 'recepcao'] },
-  { k: 'tabela', l: 'Planos e valores', papeis: ['gestao', 'recepcao', 'profissional'] },
-  { k: 'financeiro', l: 'Financeiro', papeis: ['gestao', 'recepcao'] },
-  { k: 'repasse', l: 'Repasse', papeis: ['gestao', 'profissional'] },
-  { k: 'config', l: 'Configurações', papeis: ['gestao'] },
+  { k: 'dashboard', l: 'Dashboard', papeis: ['admin', 'gestao', 'recepcao'] },
+  { k: 'agenda', l: 'Agenda', papeis: ['admin', 'gestao', 'recepcao', 'profissional'] },
+  { k: 'clientes', l: 'Clientes', papeis: ['admin', 'gestao', 'recepcao', 'profissional'] },
+  { k: 'contratos', l: 'Contratos', papeis: ['admin', 'gestao', 'recepcao'] },
+  { k: 'tabela', l: 'Planos e valores', papeis: ['admin', 'gestao', 'recepcao', 'profissional'] },
+  { k: 'financeiro', l: 'Financeiro', papeis: ['admin', 'gestao', 'recepcao'] },
+  { k: 'repasse', l: 'Repasse', papeis: ['admin', 'gestao', 'profissional'] },
+  { k: 'config', l: 'Configurações', papeis: ['admin', 'gestao'] },
 ]
 
 function Shell() {
@@ -80,7 +80,7 @@ function Shell() {
   const [filtro, setFiltro] = useState<string | undefined>(); const [cli, setCli] = useState<string | null>(null); const [pg, setPg] = useState(false); const [senha, setSenha] = useState(false)
   useEffect(() => { history.replaceState(null, '', '#' + tab) }, [tab])
   const ir = (k: string, f?: string) => { setFiltro(f); setTab(k); window.scrollTo(0, 0) }
-  const equipe = perfil.papel === 'gestao' || perfil.papel === 'recepcao'
+  const equipe = perfil.papel === 'admin' || perfil.papel === 'gestao' || perfil.papel === 'recepcao'
   return <>
     <header className="top"><div className="topin">
       <div className="logo" aria-label="CareHub Studio"><span className="sym" /><span className="word" /></div>
