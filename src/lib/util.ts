@@ -60,7 +60,7 @@ export function quando(data: string) {
 }
 export function msgConfirmacao(modelo: string | undefined, v: { nome: string; modalidade: string; data: string; hora: string; profissional: string }) {
   const q = quando(v.data); const prefixo = q === 'hoje' || q === 'amanhã' ? q : (/^(sábado|domingo)/.test(q) ? 'no ' : 'na ') + q
-  const rep: Record<string, string> = { nome: v.nome.split(' ')[0], modalidade: v.modalidade, quando: prefixo, data: br(v.data), hora: v.hora.replace(':00', 'h').replace(':', 'h'), profissional: v.profissional }
+  const rep: Record<string, string> = { nome: v.nome.split(' ')[0], modalidade: /^plano/i.test(v.modalidade) ? 'treino' : v.modalidade, quando: prefixo, data: br(v.data), hora: v.hora.replace(':00', 'h').replace(':', 'h'), profissional: v.profissional }
   return (modelo?.trim() || MSG_CONFIRMACAO_PADRAO).replace(/\{(\w+)\}/g, (m, k) => rep[k] ?? m)
 }
 export const waLink = (tel: string, msg: string) => `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`

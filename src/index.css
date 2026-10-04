@@ -213,3 +213,6 @@ h1{letter-spacing:-.015em}
 .cc.livre,.week td.livre{cursor:pointer}
 .cc.livre:hover,.week td.livre:hover{background:var(--accent-soft)}
 .cc.livre:empty:hover::after,.week td.livre:empty:hover::after{content:'+ agendar';font-size:12px;color:var(--muted)}
+/* coluna de horário fixa ao rolar para os lados */
+.cal .ct{position:sticky;left:0;z-index:1}
+.cal .ch:first-child{position:sticky;left:0;z-index:2}
