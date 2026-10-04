@@ -43,3 +43,24 @@ export function baixar(nome: string, conteudo: string) {
   const b = new Blob([conteudo], { type: 'text/csv;charset=utf-8' }); const a = document.createElement('a')
   a.href = URL.createObjectURL(b); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
 }
+
+// ---------- WhatsApp ----------
+export const MSG_CONFIRMACAO_PADRAO = 'Olá, {nome}! Tudo bem? Passando para confirmar sua aula de {modalidade} {quando}, às {hora}, com {profissional}, no CareHub Studio. Podemos confirmar sua presença?'
+export function telWhats(tel?: string | null) {
+  let d = String(tel || '').replace(/\D/g, '').replace(/^0+/, '')
+  if (!d) return null
+  if (d.length === 10 || d.length === 11) d = '55' + d
+  return d.length >= 12 && d.length <= 13 ? d : null
+}
+export function quando(data: string) {
+  const dd = diff(data, hoje())
+  if (dd === 0) return 'hoje'
+  if (dd === 1) return 'amanhã'
+  return `${DIAS_L[parse(data).getDay()].replace('segunda', 'segunda-feira').replace('terça', 'terça-feira').replace('quarta', 'quarta-feira').replace('quinta', 'quinta-feira').replace('sexta', 'sexta-feira')}, ${data.slice(8)}/${data.slice(5, 7)}`
+}
+export function msgConfirmacao(modelo: string | undefined, v: { nome: string; modalidade: string; data: string; hora: string; profissional: string }) {
+  const q = quando(v.data); const prefixo = q === 'hoje' || q === 'amanhã' ? q : (/^(sábado|domingo)/.test(q) ? 'no ' : 'na ') + q
+  const rep: Record<string, string> = { nome: v.nome.split(' ')[0], modalidade: v.modalidade, quando: prefixo, data: br(v.data), hora: v.hora.replace(':00', 'h').replace(':', 'h'), profissional: v.profissional }
+  return (modelo?.trim() || MSG_CONFIRMACAO_PADRAO).replace(/\{(\w+)\}/g, (m, k) => rep[k] ?? m)
+}
+export const waLink = (tel: string, msg: string) => `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`

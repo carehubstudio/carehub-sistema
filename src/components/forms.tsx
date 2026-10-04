@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { sb } from '../lib/supabase'
 import { ehAdmin, tituloContrato, useBase, valorCobranca, veTudo } from '../lib/store'
 import type { Atendimento, Cliente, Contrato, Pagamento, Produto, StatusAt } from '../lib/types'
-import { addMonths, br, brl, descontoDe, DIAS, formasDe, hm, hoje, MESES_PER, norm, parse } from '../lib/util'
+import { addMonths, br, brl, descontoDe, DIAS, formasDe, hm, hoje, MESES_PER, msgConfirmacao, norm, parse, telWhats, waLink } from '../lib/util'
 import { Confirmar, Modal } from './ui'
 
 const erro = (toast: (m: string) => void, e: any) => {
@@ -253,7 +253,7 @@ export const ST: Record<StatusAt, { l: string; i: string }> = {
   confirmado: { l: 'Confirmado', i: '✓' }, compareceu: { l: 'Compareceu', i: '●' }, falta: { l: 'Faltou', i: '✕' },
   falta_avisada: { l: 'Faltou (avisou)', i: '◌' }, reposicao: { l: 'Reposição', i: '↻' }, cancelado: { l: 'Cancelado', i: '—' },
 }
-export interface Slot { data: string; hora: string; cliente_id: string; contrato_id: string | null; profissional_id: string | null; at?: Atendimento; origem: 'fixo' | 'extra' }
+export interface Slot { data: string; hora: string; cliente_id: string; contrato_id: string | null; profissional_id: string | null; at?: Atendimento; origem: 'fixo' | 'extra'; n?: number }
 export function AtendimentoModal({ slot, onClose, onSaved, abrirCliente }: { slot: Slot; onClose: () => void; onSaved: () => void; abrirCliente: (id: string) => void }) {
   const { clientes, contratos, profissionais, config, toast, recarregar } = useBase()
   const c = slot.contrato_id ? contratos.get(slot.contrato_id) : undefined
@@ -274,7 +274,9 @@ export function AtendimentoModal({ slot, onClose, onSaved, abrirCliente }: { slo
   }
   const b = (v: StatusAt, cls: string, lbl?: string) => <button type="button" className={'act ' + cls} aria-pressed={st === v} onClick={() => set(v)}>{ST[v].i} {lbl || ST[v].l}</button>
   const prof = profissionais.find(p => p.id === slot.profissional_id)
-  return <Modal title={clientes.get(slot.cliente_id)?.nome || 'Atendimento'} onClose={onClose}>
+  const cli = clientes.get(slot.cliente_id); const tel = telWhats(cli?.telefone)
+  const msg = msgConfirmacao(config.msg_confirmacao, { nome: cli?.nome || '', modalidade: c?.modalidade || 'aula', data: slot.data, hora: hm(slot.hora), profissional: prof?.nome || 'a equipe' })
+  return <Modal title={cli?.nome || 'Atendimento'} onClose={onClose}>
     <div className="pbody" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '16px 18px' }}>
       <div className="sub">{[c ? tituloContrato(c) : 'Aula extra', prof?.nome, hm(slot.hora)].filter(Boolean).join(' • ')} · {DIAS[parse(slot.data).getDay()]} {br(slot.data)}</div>
       <div>Status atual: <b>{ST[st].i} {ST[st].l}</b></div>
@@ -282,15 +284,16 @@ export function AtendimentoModal({ slot, onClose, onSaved, abrirCliente }: { slo
       {c?.tipo === 'pacote' && <p className="sub" style={{ margin: 0 }}>Pacote: compareceu, reposição e falta sem aviso consomem uma sessão e geram repasse. Falta avisada com {prazo} h ou mais não consome.</p>}
       <div className="inline" style={{ justifyContent: 'space-between' }}>
         {slot.at && st !== 'confirmado' ? <button type="button" className="btn sm ghost" onClick={() => set('confirmado')}>Voltar para Confirmado</button> : slot.at && slot.origem === 'extra' ? <Confirmar className="btn sm danger" label="Remover agendamento" onConfirm={remover} /> : <span />}
-        <button type="button" className="btn sm" onClick={() => { onClose(); abrirCliente(slot.cliente_id) }}>Abrir ficha do cliente</button>
+        <span className="inline">{tel && <a className="btn sm" href={waLink(tel, msg)} target="_blank" rel="noopener">Confirmar pelo WhatsApp</a>}
+          <button type="button" className="btn sm" onClick={() => { onClose(); abrirCliente(slot.cliente_id) }}>Abrir ficha do cliente</button></span>
       </div>
     </div>
   </Modal>
 }
 
-export function NovoAgendamento({ data, onClose, onSaved }: { data: string; onClose: () => void; onSaved: () => void }) {
+export function NovoAgendamento({ data, hora, profissional, onClose, onSaved }: { data: string; hora?: string; profissional?: string; onClose: () => void; onSaved: () => void }) {
   const { clientes, contratos, profissionais, toast } = useBase()
-  const [nome, setNome] = useState(''); const [ctId, setCtId] = useState(''); const [sub, setSub] = useState<null | 'cli' | 'ct'>(null); const [f, setF] = useState({ data, hora: '07:00', profissional_id: '', obs: '' })
+  const [nome, setNome] = useState(''); const [ctId, setCtId] = useState(''); const [sub, setSub] = useState<null | 'cli' | 'ct'>(null); const [f, setF] = useState({ data, hora: hora || '07:00', profissional_id: profissional || '', obs: '' })
   const cli = [...clientes.values()].find(c => norm(c.nome) === norm(nome))
   const cts = cli ? [...contratos.values()].filter(c => c.cliente_id === cli.id && c.status === 'ativo') : []
   async function salvar(e: FormEvent) {
@@ -305,7 +308,7 @@ export function NovoAgendamento({ data, onClose, onSaved }: { data: string; onCl
       <label className="f full">Cliente<input id="ag_cli" list="dlClientes2" required value={nome} onChange={e => { setNome(e.target.value); setCtId('') }} placeholder="Digite o nome" autoComplete="off" autoFocus /></label>
       {!cli && <ClienteNaoEncontrado nome={nome} onCadastrar={() => setSub('cli')} />}
       <datalist id="dlClientes2">{[...clientes.values()].filter(c => c.status === 'ativo').map(c => <option key={c.id} value={c.nome} />)}</datalist>
-      <label className="f full">Contrato / pacote<select id="ag_ct" value={ctId} onChange={e => { setCtId(e.target.value); const c = contratos.get(e.target.value); if (c?.profissional_id) setF(v => ({ ...v, profissional_id: c.profissional_id! })) }}>
+      <label className="f full">Contrato / pacote<select id="ag_ct" value={ctId} onChange={e => { setCtId(e.target.value); const c = contratos.get(e.target.value); if (c?.profissional_id && !profissional) setF(v => ({ ...v, profissional_id: c.profissional_id! })) }}>
         <option value="">{cli ? 'Sem contrato (aula experimental, cortesia…)' : 'Escolha o cliente primeiro'}</option>
         {cts.map(c => <option key={c.id} value={c.id}>{tituloContrato(c)}</option>)}</select>{cli && <button type="button" className="btn sm" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => setSub('ct')}>+ Novo contrato / pacote</button>}</label>
       <label className="f">Data<input id="ag_data" type="date" required value={f.data} onChange={e => setF({ ...f, data: e.target.value })} /></label>

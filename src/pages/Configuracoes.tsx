@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { sb } from '../lib/supabase'
 import { useBase } from '../lib/store'
 import type { Perfil, Profissional, Regra } from '../lib/types'
-import { br, formasDe, hoje, type Forma } from '../lib/util'
+import { addDays, br, formasDe, hoje, MSG_CONFIRMACAO_PADRAO, msgConfirmacao, type Forma } from '../lib/util'
 import { Confirmar, Modal } from '../components/ui'
 
 const PAPEIS: Record<string, string> = { pendente: 'Aguardando liberação', admin: 'Ultimate', gestao: 'Gestão', recepcao: 'Recepção', profissional: 'Profissional' }
@@ -114,6 +114,7 @@ export function Configuracoes() {
   const [modal, setModal] = useState<null | { k: 'novoUser' } | { k: 'senha'; u: Perfil } | { k: 'prof'; p?: Profissional }>(null)
   const [nr, setNr] = useState({ profissional_id: '', modalidade: '', pct_estudio: '', vigencia_inicio: hoje() })
   const [prazo, setPrazo] = useState('')
+  const [msgW, setMsgW] = useState('')
   type FF = { nome: string; taxa: string; taxa_parcelado: string; imposto: string; ativo: boolean }
   const [formas, setFormas] = useState<FF[]>([])
   const carregar = () => {
@@ -123,6 +124,7 @@ export function Configuracoes() {
   useEffect(carregar, [])
   useEffect(() => {
     setPrazo(String(config.prazo_aviso_falta_horas ?? 12))
+    setMsgW(config.msg_confirmacao || MSG_CONFIRMACAO_PADRAO)
     setFormas(formasDe(config).map((f: Forma) => ({ nome: f.nome, taxa: String(f.taxa ?? 0), taxa_parcelado: f.taxa_parcelado == null ? '' : String(f.taxa_parcelado), imposto: String(f.imposto ?? 0), ativo: f.ativo !== false })))
   }, [config])
   const mods = [...new Set(produtos.map(p => p.modalidade))].sort()
@@ -191,6 +193,12 @@ export function Configuracoes() {
         </div>}</fieldset>
         <p className="sub" style={{ padding: '0 16px 12px', margin: 0 }}>“Taxa parcelado” vale quando o pagamento tem 2 parcelas ou mais; em branco, usa a taxa normal. Formas desativadas somem da lista de pagamento, mas os lançamentos antigos continuam com elas.</p></section>
     </div>
+    <section className="panel" style={{ marginTop: 16 }}><header><div><h2>Mensagem de confirmação (WhatsApp)</h2><p>Texto que a agenda prepara para confirmar a presença do aluno. Use {'{nome}'}, {'{modalidade}'}, {'{quando}'} (hoje, amanhã ou o dia), {'{data}'}, {'{hora}'} e {'{profissional}'}.</p></div></header>
+      <div className="pbody" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <textarea aria-label="Mensagem de confirmação" rows={3} disabled={ro} value={msgW} onChange={e => setMsgW(e.target.value)} />
+        <p className="sub" style={{ margin: 0 }}>Exemplo: {msgConfirmacao(msgW, { nome: 'Maria Silva', modalidade: 'Pilates', data: addDays(hoje(), 1), hora: '07:00', profissional: 'Caroline' })}</p>
+        {!ro && <div className="inline" style={{ justifyContent: 'flex-end' }}><button className="btn sm ghost" onClick={() => setMsgW(MSG_CONFIRMACAO_PADRAO)}>Restaurar padrão</button><button className="btn pri" onClick={async () => { if (ok(await sb.from('configuracoes').upsert({ chave: 'msg_confirmacao', valor: msgW.trim() || MSG_CONFIRMACAO_PADRAO }), 'Mensagem salva')) recarregarConfig() }}>Salvar mensagem</button></div>}
+      </div></section>
     {modal?.k === 'novoUser' && <NovoUsuario onClose={() => setModal(null)} onSaved={carregar} />}
     {modal?.k === 'senha' && <RedefinirSenha u={modal.u} onClose={() => setModal(null)} />}
     {modal?.k === 'prof' && <ProfissionalForm prof={modal.p} ro={ro} onClose={() => setModal(null)} />}
